@@ -178,3 +178,5 @@ docker compose -f ci/jenkins/compose.yaml up -d --build
 Open <http://localhost:8081> (admin / admin) and run the `sms-phishing-detector` job.
 Plugins and the pipeline job are defined in [`ci/jenkins/`](ci/jenkins/), so the
 setup is reproducible.
+
+![Jenkins stage view: all stages green, regression gate passed](docs/jenkins-stage-view.png)
