@@ -1,0 +1,44 @@
+name: sms-phishing-detector
+
+services:
+  model-service:
+    build: ./model-service
+    ports:
+      - "${MODEL_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+      start_period: 5s
+
+  gateway:
+    build:
+      context: .
+      target: gateway
+    environment:
+      MODEL_URL: http://model-service:8000
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      model-service:
+        condition: service_healthy
+
+  # docker compose run --rm evalgate
+  evalgate:
+    build:
+      context: .
+      target: evalgate
+    profiles: ["gate"]
+    depends_on:
+      gateway:
+        condition: service_started
+
+  # docker compose --profile monitoring up -d
+  prometheus:
+    image: prom/prometheus:v3.0.0
+    profiles: ["monitoring"]
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
