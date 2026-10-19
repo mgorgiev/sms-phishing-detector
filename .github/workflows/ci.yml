@@ -1,0 +1,51 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [ml, model-service]
+    defaults:
+      run:
+        working-directory: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -q
+
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: go test -race ./...
+
+  regression-gate:
+    needs: [python, go]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch the released model
+        run: sh scripts/fetch-model.sh
+      - name: Start model service and gateway
+        run: docker compose up -d --build --wait model-service gateway
+      - name: Run the regression gate
+        run: docker compose run --rm --build evalgate
+      - name: Service logs
+        if: failure()
+        run: docker compose logs
+      - name: Stop
+        if: always()
+        run: docker compose down --remove-orphans

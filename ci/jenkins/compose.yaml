@@ -1,0 +1,20 @@
+# docker compose -f ci/jenkins/compose.yaml up -d --build   ->  http://localhost:8081 (admin/admin)
+#
+# Runs as root so the pipeline can use the host's Docker socket. That is fine for a local
+# demo; a shared Jenkins would use a dedicated agent instead.
+name: smishing-jenkins
+
+services:
+  jenkins:
+    build: .
+    user: root
+    ports:
+      - "8081:8080"
+    environment:
+      JENKINS_ADMIN_PASSWORD: ${JENKINS_ADMIN_PASSWORD:-admin}
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  jenkins_home:

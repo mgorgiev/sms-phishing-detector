@@ -1,0 +1,33 @@
+jenkins:
+  systemMessage: "Local CI for sms-phishing-detector"
+  numExecutors: 2
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: admin
+          password: ${JENKINS_ADMIN_PASSWORD:-admin}
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+unclassified:
+  location:
+    url: http://localhost:8081/
+
+jobs:
+  - script: >
+      pipelineJob('sms-phishing-detector') {
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('https://github.com/mgorgiev/sms-phishing-detector.git') }
+                branch('*/main')
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(true)
+          }
+        }
+      }
