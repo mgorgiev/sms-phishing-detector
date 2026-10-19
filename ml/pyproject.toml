@@ -50,5 +50,9 @@ line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
 
+[tool.ruff.lint.per-file-ignores]
+# Notebooks set environment variables before importing transformers.
+"notebooks/*.ipynb" = ["E402"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
